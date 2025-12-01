@@ -64,6 +64,23 @@ services:
     networks:
       - pms-network
 
+  pms-ingestion:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pms-ingestion
+    depends_on:
+      - postgres
+      - kafka
+      - redis
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    networks:
+      - pms-network
+    restart: unless-stopped
+
 networks:
   pms-network:
     driver: bridge

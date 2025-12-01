@@ -50,10 +50,18 @@ public class RedisBatchConsumer {
     public void start() {
         RedisCommands<String, String> commands = connection.sync();
         try {
-            commands.xgroupCreate(XReadArgs.StreamOffset.from(streamName, "0"), groupName);
-            log.info("Created consumer group: {} for stream: {}", groupName, streamName);
+            // MKSTREAM creates the stream if it does not exist
+            commands.xgroupCreate(
+                    XReadArgs.StreamOffset.from(streamName, "0"),
+                    groupName,
+                    io.lettuce.core.XGroupCreateArgs.Builder.mkstream()
+            );
+            log.info("Created consumer group '{}' for stream '{}' (stream created if missing)", groupName, streamName);
+        } catch (io.lettuce.core.RedisBusyException e) {
+            // Consumer group already exists – this is fine
+            log.info("Consumer group '{}' already exists for stream '{}'", groupName, streamName);
         } catch (Exception e) {
-            log.info("Consumer group {} probably exists: {}", groupName, e.getMessage());
+            log.warn("Could not create consumer group '{}': {}", groupName, e.getMessage());
         }
         Thread t = new Thread(this::loop);
         t.setDaemon(true);
