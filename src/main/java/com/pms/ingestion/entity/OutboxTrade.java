@@ -1,7 +1,7 @@
-package com.pms.ingestion.Entity;
+package com.pms.ingestion.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.time.Instant;
@@ -10,17 +10,19 @@ import java.util.UUID;
 
 
 @Entity
-@Table(name = "safe_store_trade")
+@Table(name = "outbox_trade")
 @Data
-public class SafeStoreEntity {
+@NoArgsConstructor
+@AllArgsConstructor
+public class OutboxTrade {
 
     @Id
     @GeneratedValue
     @UuidGenerator
-    private String id;
+    private UUID id;
 
-    @Column(name = "received_at", nullable = false)
-    private Instant receivedAt;
+    @Column(name = "created_at", nullable = false)
+    private Instant createdAt;
 
     @Column(name = "portfolio_id", nullable = false)
     private UUID portfolioId;
@@ -42,4 +44,16 @@ public class SafeStoreEntity {
 
     @Column(name = "timestamp", nullable = false)
     private LocalDateTime timestamp;
+
+    @Column(name = "status", nullable = false)
+    private String status = "PENDING";
+
+    @Column(name = "attempts", nullable = false)
+    private Integer attempts = 0;
+
+    //! replace with more scaleable code for production use
+    public String toJson() {
+        return String.format("{\"portfolioId\":\"%s\",\"tradeId\":\"%s\",\"symbol\":\"%s\",\"side\":\"%s\",\"pricePerStock\":%s,\"quantity\":%d,\"timestamp\":\"%s\"}",
+                portfolioId, tradeId, symbol, side, pricePerStock, quantity, timestamp.toString());
+    }
 }

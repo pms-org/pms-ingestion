@@ -1,21 +1,24 @@
-package com.pms.ingestion.Dto;
+package com.pms.ingestion.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 
 @Data
 public class RawTradeDto {
 
 
-    @JsonProperty("p_id")
-    private String pId;
+    @JsonProperty("portfolio_id")
+    private UUID portfolioId;
 
-    @JsonProperty("t_id")
-    private String tId;
+    @JsonProperty("trade_id")
+    private UUID tradeId;
 
-    @JsonProperty("cusip_id")
-    private String cusipId;
+    @JsonProperty("symbol")
+    private String symbol;
 
     @JsonProperty("side")
     private String side;          // BUY / SELL
@@ -24,9 +27,9 @@ public class RawTradeDto {
     private Double pricePerStock;
 
     @JsonProperty("quantity")
-    private Integer quantity;
+    private Long quantity;
 
     @JsonProperty("timestamp")
-    private String timestamp;
+    private LocalDateTime timestamp;
 
 }

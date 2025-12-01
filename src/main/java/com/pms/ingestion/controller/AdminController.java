@@ -1,12 +1,12 @@
-package com.pms.ingestion.Controller;
+package com.pms.ingestion.controller;
 
 
-import com.pms.ingestion.Dao.DlqDao;
-import com.pms.ingestion.Dao.OutboxEventDao;
-import com.pms.ingestion.Dao.SafeStoreDao;
-import com.pms.ingestion.Entity.DlqEntity;
-import com.pms.ingestion.Entity.OutboxEventEntity;
-import com.pms.ingestion.Entity.SafeStoreEntity;
+import com.pms.ingestion.repository.DlqRepository;
+import com.pms.ingestion.repository.OutboxEventRepository;
+import com.pms.ingestion.repository.SafeStoreRepository;
+import com.pms.ingestion.entity.DlqTrade;
+import com.pms.ingestion.entity.OutboxTrade;
+import com.pms.ingestion.entity.SafeStoreTrade;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -23,9 +23,9 @@ import java.util.List;
 @Tag(name = "Admin", description = "Admin API")
 public class AdminController {
 
-    private final SafeStoreDao safeStoreDao;
-    private final OutboxEventDao outboxEventDao;
-    private final DlqDao dlqDao;
+    private final SafeStoreRepository safeStoreRepository;
+    private final OutboxEventRepository outboxEventRepository;
+    private final DlqRepository dlqRepository;
 
     @GetMapping("/health")
     @Operation(summary = "Health check")
@@ -35,22 +35,22 @@ public class AdminController {
 
     @GetMapping("/safe-store")
     @Operation(summary = "Get all safe store data")
-    public ResponseEntity<List<SafeStoreEntity>> getAllSafeStoreData() {
-        List<SafeStoreEntity> safeStoreData = safeStoreDao.findAll();
+    public ResponseEntity<List<SafeStoreTrade>> getAllSafeStoreData() {
+        List<SafeStoreTrade> safeStoreData = safeStoreRepository.findAll();
         return ResponseEntity.ok(safeStoreData);
     }
 
     @GetMapping("/outbox")
     @Operation(summary = "Get all outbox events")
-    public ResponseEntity<List<OutboxEventEntity>> getAllOutboxEvents() {
-        List<OutboxEventEntity> outboxEvents = outboxEventDao.findAll();
-        return ResponseEntity.ok(outboxEvents);
+    public ResponseEntity<List<OutboxTrade>> getAllOutboxEvents() {
+        List<OutboxTrade> outboxTrades = outboxEventRepository.findAll();
+        return ResponseEntity.ok(outboxTrades);
     }
 
     @GetMapping("/dlq")
     @Operation(summary = "Get all DLQ events")
-    public ResponseEntity<List<DlqEntity>> getAllDlqEvents() {
-        List<DlqEntity> dlqEvents = dlqDao.findAll();
+    public ResponseEntity<List<DlqTrade>> getAllDlqEvents() {
+        List<DlqTrade> dlqEvents = dlqRepository.findAll();
         return ResponseEntity.ok(dlqEvents);
     }
 

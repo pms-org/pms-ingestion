@@ -1,4 +1,4 @@
-package com.pms.ingestion.Entity;
+package com.pms.ingestion.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
@@ -9,7 +9,7 @@ import java.time.Instant;
 @Entity
 @Table(name = "dlq_trade")
 @Data
-public class DlqEntity {
+public class DlqTrade {
     @Id
     @GeneratedValue
     @UuidGenerator

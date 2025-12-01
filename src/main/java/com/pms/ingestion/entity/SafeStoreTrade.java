@@ -1,7 +1,7 @@
-package com.pms.ingestion.Entity;
+package com.pms.ingestion.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.time.Instant;
@@ -10,18 +10,19 @@ import java.util.UUID;
 
 
 @Entity
-@Table(name = "outbox_trade")
+@Table(name = "safe_store_trade")
 @Data
-public class OutboxEventEntity {
-
+@NoArgsConstructor
+@AllArgsConstructor
+public class SafeStoreTrade {
 
     @Id
     @GeneratedValue
     @UuidGenerator
-    private String id;
+    private UUID id;
 
-    @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
+    @Column(name = "received_at", nullable = false)
+    private Instant receivedAt;
 
     @Column(name = "portfolio_id", nullable = false)
     private UUID portfolioId;
