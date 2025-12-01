@@ -5,6 +5,8 @@ import lombok.Data;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 
 @Entity
@@ -20,14 +22,14 @@ public class SafeStoreEntity {
     @Column(name = "received_at", nullable = false)
     private Instant receivedAt;
 
-    @Column(name = "p_id", nullable = false)
-    private String pId;
+    @Column(name = "portfolio_id", nullable = false)
+    private UUID portfolioId;
 
-    @Column(name = "t_id", nullable = false)
-    private String tId;
+    @Column(name = "trade_id", nullable = false)
+    private UUID tradeId;
 
-    @Column(name = "cusip_id", nullable = false)
-    private String cusipId;
+    @Column(name = "symbol", nullable = false)
+    private String symbol;
 
     @Column(name = "side", nullable = false)
     private String side;
@@ -36,8 +38,8 @@ public class SafeStoreEntity {
     private Double pricePerStock;
 
     @Column(name = "quantity", nullable = false)
-    private Integer quantity;
+    private Long quantity;
 
     @Column(name = "timestamp", nullable = false)
-    private String timestamp;
+    private LocalDateTime timestamp;
 }
