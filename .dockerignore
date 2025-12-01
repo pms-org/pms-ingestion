@@ -1,0 +1,45 @@
+# Ignore build outputs
+target/
+build/
+out/
+
+# Ignore packaged artifacts
+*.jar
+*.war
+*.ear
+*.class
+
+# Gradle/Maven caches and wrappers (keep wrapper scripts and wrapper dir if needed)
+.gradle/
+
+# IDE files
+.idea/
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings/
+
+# Node modules
+node_modules/
+
+# Logs and temp
+logs/
+*.log
+tmp/
+temp/
+*.tmp
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Misc
+coverage/
+reports/

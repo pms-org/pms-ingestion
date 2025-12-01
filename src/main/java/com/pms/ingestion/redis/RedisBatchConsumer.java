@@ -1,6 +1,7 @@
 package com.pms.ingestion.redis;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.pms.ingestion.entity.TradeEvent;
 import com.pms.ingestion.service.TransactionalWriter;
 import io.lettuce.core.Consumer;
@@ -12,17 +13,24 @@ import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+@Service
 public class RedisBatchConsumer {
     private static final Logger log = LoggerFactory.getLogger(RedisBatchConsumer.class);
     private final StatefulRedisConnection<String, String> connection;
     private final TransactionalWriter writer;
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper;
+
+    {
+        mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+    }
 
 
     @Value("${app.redisStreamName:trades}")
@@ -43,38 +51,53 @@ public class RedisBatchConsumer {
         RedisCommands<String, String> commands = connection.sync();
         try {
             commands.xgroupCreate(XReadArgs.StreamOffset.from(streamName, "0"), groupName);
+            log.info("Created consumer group: {} for stream: {}", groupName, streamName);
         } catch (Exception e) {
-            log.info("consumer group probably exists: {}", e.getMessage());
+            log.info("Consumer group {} probably exists: {}", groupName, e.getMessage());
         }
-
-
         Thread t = new Thread(this::loop);
         t.setDaemon(true);
         t.start();
+        log.info("RedisBatchConsumer started, reading from stream: {}", streamName);
     }
 
 
     private void loop() {
         RedisCommands<String, String> commands = connection.sync();
+        log.info("Starting consumer loop for stream: {} with group: {}", streamName, groupName);
         while (true) {
             try {
                 // XREADGROUP GROUP group consumer COUNT 100 BLOCK 2000 STREAMS stream >
                 List<StreamMessage<String, String>> messages = commands.xreadgroup(Consumer.from(groupName, "consumer-1"), XReadArgs.Builder.count(200).block(Duration.ofSeconds(2)), XReadArgs.StreamOffset.lastConsumed(streamName));
-                if (messages == null || messages.isEmpty()) continue;
+                if (messages == null || messages.isEmpty()) {
+                    continue;
+                }
+
+                log.info("Received {} messages from Redis stream", messages.size());
                 List<TradeEvent> events = new ArrayList<>();
                 List<String> ids = new ArrayList<>();
+
                 for (StreamMessage<String, String> m : messages) {
                     Map<String, String> map = m.getBody();
                     String payload = map.get("payload");
                     TradeEvent evt = mapper.readValue(payload, TradeEvent.class);
-                    events.add(evt);
-                    ids.add(m.getId());
+                    // Filter out invalid messages with null critical fields
+                    if (evt.getTradeId() != null && evt.getSymbol() != null && evt.getSide() != null) {
+                        events.add(evt);
+                        ids.add(m.getId());
+                    } else {
+                        log.warn("Skipping invalid trade event with null fields: {}", payload);
+                        // Still acknowledge to remove from stream
+                        commands.xack(streamName, groupName, m.getId());
+                    }
                 }
                 // write to DB transactionally
                 writer.writeBatch(events);
+                log.info("Wrote {} events to database", events.size());
 
                 // acknowledge
                 ids.forEach(id -> commands.xack(streamName, groupName, id));
+                log.info("Acknowledged {} messages", ids.size());
 
 
             } catch (Exception e) {

@@ -21,6 +21,8 @@ services:
     container_name: postgres
     environment:
       POSTGRES_USER: pms-usr
+      PGTZ: Asia/Kolkata
+      TZ: Asia/Kolkata
       POSTGRES_PASSWORD: pms-pw
       POSTGRES_DB: pms-db
     ports:
