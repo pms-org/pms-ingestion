@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 
 @Slf4j
@@ -65,7 +66,7 @@ public class IngestionService {
             log.warn("Error processing trade data: {}", ex.getMessage());
 
             DlqTrade dlqTrade = new DlqTrade();
-            dlqTrade.setFailedAt(Instant.now());
+            dlqTrade.setFailedAt(LocalDateTime.now());
             dlqTrade.setRawMessage(rawMessage);
             dlqTrade.setErrorDetail(ex.getMessage());
             dlqRepository.save(dlqTrade);

@@ -2,7 +2,9 @@ package com.pms.ingestion.redis;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.pms.ingestion.entity.DlqTrade;
 import com.pms.ingestion.entity.TradeEvent;
+import com.pms.ingestion.repository.DlqTradeRepository;
 import com.pms.ingestion.service.TransactionalWriter;
 import io.lettuce.core.Consumer;
 import io.lettuce.core.StreamMessage;
@@ -16,6 +18,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +28,7 @@ public class RedisBatchConsumer {
     private static final Logger log = LoggerFactory.getLogger(RedisBatchConsumer.class);
     private final StatefulRedisConnection<String, String> connection;
     private final TransactionalWriter writer;
+    private final DlqTradeRepository dlqRepository;
     private final ObjectMapper mapper;
 
     {
@@ -41,9 +45,10 @@ public class RedisBatchConsumer {
     private String groupName;
 
 
-    public RedisBatchConsumer(StatefulRedisConnection<String, String> connection, TransactionalWriter writer) {
+    public RedisBatchConsumer(StatefulRedisConnection<String, String> connection, TransactionalWriter writer, DlqTradeRepository dlqRepository) {
         this.connection = connection;
         this.writer = writer;
+        this.dlqRepository = dlqRepository;
     }
 
     @PostConstruct
@@ -94,8 +99,12 @@ public class RedisBatchConsumer {
                         events.add(evt);
                         ids.add(m.getId());
                     } else {
-                        log.warn("Skipping invalid trade event with null fields: {}", payload);
-                        // Still acknowledge to remove from stream
+                        log.warn("Storing invalid trade event in DLQ: {}", payload);
+                        DlqTrade dlqTrade = new DlqTrade();
+                        dlqTrade.setErrorDetail("Null critical fields: tradeId, symbol, or side");
+                        dlqTrade.setFailedAt(LocalDateTime.now());
+                        dlqTrade.setRawMessage(payload);
+                        dlqRepository.save(dlqTrade);
                         commands.xack(streamName, groupName, m.getId());
                     }
                 }
