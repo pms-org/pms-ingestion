@@ -1,10 +1,12 @@
 # Ignore build outputs
 target/
+!target/ingestion-0.0.1-SNAPSHOT.jar
 build/
 out/
 
 # Ignore packaged artifacts
 *.jar
+!target/ingestion-0.0.1-SNAPSHOT.jar
 *.war
 *.ear
 *.class

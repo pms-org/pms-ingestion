@@ -9,23 +9,28 @@ import com.pms.ingestion.repository.OutboxEventRepository;
 import com.pms.ingestion.repository.SafeStoreRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.pms.ingestion.service.CrossCuttingService;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
 
+@Slf4j
 @Service
 public class TransactionalWriter {
     private final SafeStoreRepository safeRepo;
     private final OutboxEventRepository outboxRepo;
     private final DlqTradeRepository dlqRepo;
+    private final CrossCuttingService crossCuttingService;
 
-    public TransactionalWriter(SafeStoreRepository safeRepo, OutboxEventRepository outboxRepo, DlqTradeRepository dlqRepo) {
+    public TransactionalWriter(SafeStoreRepository safeRepo, OutboxEventRepository outboxRepo, DlqTradeRepository dlqRepo,CrossCuttingService crossCuttingService) {
         this.safeRepo = safeRepo;
         this.outboxRepo = outboxRepo;
         this.dlqRepo = dlqRepo;
+        this.crossCuttingService = crossCuttingService;
     }
 
 
@@ -54,6 +59,9 @@ public class TransactionalWriter {
                 ob.setQuantity(e.getQuantity());
                 ob.setTimestamp(e.getTimestamp());
                 outboxRepo.save(ob);
+
+                log.info("Calling crossCuttingService.recordIngestionSuccess for trade: {}", e.getTradeId());
+                crossCuttingService.recordIngestionSuccess(e, ss, ob);
             } catch (Exception ex) {
                 // Store invalid trade in DLQ
                 DlqTrade dlq = new DlqTrade();
@@ -61,6 +69,8 @@ public class TransactionalWriter {
                 dlq.setRawMessage(e.toString());
                 dlq.setErrorDetail(ex.getMessage());
                 dlqRepo.save(dlq);
+
+                crossCuttingService.recordIngestionFailure(e, dlq, ex);
             }
         }
     }
