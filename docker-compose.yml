@@ -15,20 +15,6 @@ services:
     networks:
       - pms-network
 
-  postgres:
-    image: postgres:16
-    container_name: postgres
-    environment:
-      POSTGRES_USER: pms-usr
-      PGTZ: Asia/Kolkata
-      TZ: Asia/Kolkata
-      POSTGRES_PASSWORD: pms-pw
-      POSTGRES_DB: pms-db
-    ports:
-      - "5432:5432"
-    networks:
-      - pms-network
-
   kafka:
     image: confluentinc/cp-kafka:7.5.0
     hostname: kafka
@@ -69,7 +55,6 @@ services:
       dockerfile: Dockerfile
     container_name: pms-ingestion
     depends_on:
-      - postgres
       - kafka
       - redis
     ports:

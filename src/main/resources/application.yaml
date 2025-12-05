@@ -3,20 +3,18 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/pms-db
-    username: pms-usr
-    password: pms-pw
+    url: jdbc:postgresql://db-instance-pms.cvk4yqey0ex7.us-east-2.rds.amazonaws.com:5432/pms_db
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:PMS.2025}
     driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: false
-    properties:
-      hibernate.format_sql: false
       
   kafka:
-    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -32,10 +30,10 @@ spring:
 
   data:
     redis:
-      host: localhost
-      port: 6379
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
 
 app:
-  wsSimulatorUrl: ws://localhost:4000/trade-websocket
+  wsSimulatorUrl: ${WS_SIMULATOR_URL:ws://pms-simulation:8080/trade-websocket}
 
 

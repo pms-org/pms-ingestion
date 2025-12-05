@@ -15,7 +15,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/admin")
@@ -26,11 +31,37 @@ public class AdminController {
     private final SafeStoreRepository safeStoreRepository;
     private final OutboxEventRepository outboxEventRepository;
     private final DlqRepository dlqRepository;
+    private final DataSource dataSource;
 
     @GetMapping("/health")
     @Operation(summary = "Health check")
     public ResponseEntity<String> healthCheck() {
         return ResponseEntity.ok("OK");
+    }
+
+    @GetMapping("/db-connection")
+    @Operation(summary = "Test AWS RDS database connection")
+    public ResponseEntity<Map<String, Object>> testDatabaseConnection() {
+        Map<String, Object> result = new HashMap<>();
+        
+        try (Connection connection = dataSource.getConnection()) {
+            boolean isValid = connection.isValid(5); // 5 second timeout
+            
+            result.put("connected", isValid);
+            result.put("database", connection.getCatalog());
+            result.put("url", connection.getMetaData().getURL());
+            result.put("driver", connection.getMetaData().getDriverName());
+            result.put("driverVersion", connection.getMetaData().getDriverVersion());
+            result.put("status", isValid ? "SUCCESS" : "FAILED");
+            
+            return ResponseEntity.ok(result);
+            
+        } catch (SQLException e) {
+            result.put("connected", false);
+            result.put("status", "ERROR");
+            result.put("error", e.getMessage());
+            return ResponseEntity.status(500).body(result);
+        }
     }
 
     @GetMapping("/safe-store")
